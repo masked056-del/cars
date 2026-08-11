@@ -8,11 +8,113 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
-            background: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('download%20(2).jpg');
+            background: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('https://images.pexels.com/photos/33268786/pexels-photo-33268786.jpeg?auto=compress&cs=tinysrgb&w=1920');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
             box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.95);
+        }
+        .search-input {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            color: #e2e8f0;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+        }
+        .search-input::placeholder {
+            color: #64748b;
+        }
+        .car-card {
+            transition: all 0.3s ease;
+        }
+        .car-card.hidden-card {
+            display: none;
+        }
+        .no-results {
+            display: none;
+        }
+        .no-results.visible {
+            display: block;
+        }
+
+        /* AI Panel */
+        #aiPanel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            max-width: 400px;
+            height: 0;
+            background: rgba(15, 23, 42, 0.97);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-bottom: none;
+            border-radius: 0 20px 0 0;
+            z-index: 100;
+            overflow: hidden;
+            transition: height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+        }
+        #aiPanel.open {
+            height: 560px;
+            max-height: 85vh;
+        }
+        .ai-message {
+            animation: fadeInUp 0.3s ease;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .ai-typing span {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #f59e0b;
+            margin: 0 2px;
+            animation: typing 1.2s infinite;
+        }
+        .ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+        .ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+            30% { opacity: 1; transform: scale(1.1); }
+        }
+        #aiInput {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            color: #e2e8f0;
+            transition: border-color 0.2s;
+        }
+        #aiInput:focus {
+            outline: none;
+            border-color: #f59e0b;
+        }
+        #aiInput::placeholder {
+            color: #64748b;
+        }
+        .ai-suggestion {
+            transition: all 0.2s;
+        }
+        .ai-suggestion:hover {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: #f59e0b;
+        }
+        #aiMessages::-webkit-scrollbar {
+            width: 5px;
+        }
+        #aiMessages::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+        #aiMessages::-webkit-scrollbar-thumb {
+            background: rgba(245, 158, 11, 0.4);
+            border-radius: 10px;
         }
     </style>
   <meta property="og:image" content="https://bolt.new/static/og_default.png">
@@ -25,32 +127,27 @@
     <nav class="bg-slate-950/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 px-6 py-4">
         <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
             
-            <!-- Logo & Hover Search Box -->
-            <div class="flex items-center gap-6 relative group">
+            <!-- Logo & Working Search -->
+            <div class="flex items-center gap-4">
                 <span class="text-2xl font-bold tracking-wider text-amber-500">AutoElite</span>
-                
-                <!-- Search Icon & Expanding Search Box on Hover -->
                 <div class="relative flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-300 cursor-pointer hover:text-amber-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 absolute right-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                    <!-- Expandable Search Input -->
-                    <div class="absolute right-0 top-1/2 -translate-y-1/2 w-0 overflow-hidden group-hover:w-64 transition-all duration-300 ease-in-out bg-slate-900 border border-slate-700 rounded-full shadow-lg">
-                        <input type="text" placeholder="ابحث هنا..." class="w-full bg-transparent px-4 py-2 text-sm text-white focus:outline-none">
-                    </div>
+                    <input id="navSearch" type="text" placeholder="ابحث عن سيارة..." class="search-input pr-10 pl-4 py-2 rounded-full text-sm w-48 md:w-64">
                 </div>
             </div>
 
             <!-- Brand Links -->
             <div class="flex items-center gap-2 md:gap-3 overflow-x-auto py-2">
                 <a href="index.html" class="px-3 py-1.5 rounded-lg text-sm bg-amber-600 text-white font-medium whitespace-nowrap shadow-lg">home</a>
-                <a href="../bmw/index.html" class="px-3 py-1.5 rounded-lg text-sm bg-slate-900/60 hover:bg-amber-600 hover:text-white transition-all text-slate-300 whitespace-nowrap">BMW</a>
-                <a href="../merce/merce.html" class="px-3 py-1.5 rounded-lg text-sm bg-slate-900/60 hover:bg-amber-600 hover:text-white transition-all text-slate-300 whitespace-nowrap">Mercedes</a>
-                <a href="../porche/porche.html" class="px-3 py-1.5 rounded-lg text-sm bg-slate-900/60 hover:bg-amber-600 hover:text-white transition-all text-slate-300 whitespace-nowrap">Porsche</a>
-                <a href="../oudyy/oudy.html" class="px-3 py-1.5 rounded-lg text-sm bg-slate-900/60 hover:bg-amber-600 hover:text-white transition-all text-slate-300 whitespace-nowrap">Audi</a>
-                <a href="../volex/index.html" class="px-3 py-1.5 rounded-lg text-sm bg-slate-900/60 hover:bg-amber-600 hover:text-white transition-all text-slate-300 whitespace-nowrap">Volkswagen</a>
-                <a href="../obel/obel.html" class="px-3 py-1.5 rounded-lg text-sm bg-slate-900/60 hover:bg-amber-600 hover:text-white transition-all text-slate-300 whitespace-nowrap">Opel</a>
-                <a href="../dodge/dodge.html" class="px-3 py-1.5 rounded-lg text-sm bg-slate-900/60 hover:bg-amber-600 hover:text-white transition-all text-slate-300 whitespace-nowrap">Dodge</a>
+                <a href="bmw.html" class="px-3 py-1.5 rounded-lg text-sm bg-slate-900/60 hover:bg-amber-600 hover:text-white transition-all text-slate-300 whitespace-nowrap">BMW</a>
+                <a href="#" class="px-3 py-1.5 rounded-lg text-sm bg-slate-900/60 hover:bg-amber-600 hover:text-white transition-all text-slate-300 whitespace-nowrap">Mercedes</a>
+                <a href="#" class="px-3 py-1.5 rounded-lg text-sm bg-slate-900/60 hover:bg-amber-600 hover:text-white transition-all text-slate-300 whitespace-nowrap">Porsche</a>
+                <a href="#" class="px-3 py-1.5 rounded-lg text-sm bg-slate-900/60 hover:bg-amber-600 hover:text-white transition-all text-slate-300 whitespace-nowrap">Audi</a>
+                <a href="#" class="px-3 py-1.5 rounded-lg text-sm bg-slate-900/60 hover:bg-amber-600 hover:text-white transition-all text-slate-300 whitespace-nowrap">Volkswagen</a>
+                <a href="#" class="px-3 py-1.5 rounded-lg text-sm bg-slate-900/60 hover:bg-amber-600 hover:text-white transition-all text-slate-300 whitespace-nowrap">Opel</a>
+                <a href="#" class="px-3 py-1.5 rounded-lg text-sm bg-slate-900/60 hover:bg-amber-600 hover:text-white transition-all text-slate-300 whitespace-nowrap">Dodge</a>
             </div>
 
         </div>
@@ -61,11 +158,20 @@
         <div class="max-w-7xl mx-auto">
             <h1 class="text-4xl font-extrabold text-center mb-12 tracking-wide text-amber-400 drop-shadow-lg">أحدث سيارات المعرض</h1>
 
+            <!-- No Results Message -->
+            <div id="noResults" class="no-results text-center py-20">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-slate-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="text-slate-400 text-lg">لا توجد نتائج مطابقة لبحثك</p>
+                <button onclick="clearSearch()" class="mt-4 text-amber-500 hover:text-amber-400 text-sm underline">عرض كل السيارات</button>
+            </div>
+
             <!-- Cars Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div id="carsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 
                 <!-- Car Card 1 -->
-                <div class="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-2">
+                <div class="car-card bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-2" data-brand="bmw" data-name="BMW M4 Competition" data-price="85000" data-year="2026" data-hp="503" data-accel="3.8" data-keywords="رياضية رياضي bmw m4 competition سيارة">
                     <img src="https://images.pexels.com/photos/12066287/pexels-photo-12066287.jpeg?auto=compress&cs=tinysrgb&w=800" alt="BMW" class="w-full h-56 object-cover">
                     <div class="p-6 space-y-3">
                         <h3 class="text-xl font-bold text-amber-500">BMW M4 Competition</h3>
@@ -78,7 +184,7 @@
                 </div>
 
                 <!-- Car Card 2 -->
-                <div class="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-2">
+                <div class="car-card bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-2" data-brand="dodge" data-name="Dodge Charger Hellcat" data-price="78000" data-year="2025" data-hp="707" data-accel="3.6" data-keywords="dodge charger hellcat عضلات أمريكية وحش">
                     <img src="https://images.pexels.com/photos/20706251/pexels-photo-20706251.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Dodge" class="w-full h-56 object-cover">
                     <div class="p-6 space-y-3">
                         <h3 class="text-xl font-bold text-amber-500">Dodge Charger Hellcat</h3>
@@ -91,7 +197,7 @@
                 </div>
 
                 <!-- Car Card 3 -->
-                <div class="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-2">
+                <div class="car-card bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-2" data-brand="porsche" data-name="Porsche 911 Turbo S" data-price="230000" data-year="2026" data-hp="640" data-accel="2.7" data-keywords="porsche 911 turbo s بورش تحفة ألمانية سرعة">
                     <img src="https://images.pexels.com/photos/38160273/pexels-photo-38160273.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Porsche" class="w-full h-56 object-cover">
                     <div class="p-6 space-y-3">
                         <h3 class="text-xl font-bold text-amber-500">Porsche 911 Turbo S</h3>
@@ -104,7 +210,7 @@
                 </div>
 
                 <!-- Car Card 4 -->
-                <div class="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-2">
+                <div class="car-card bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-2" data-brand="mercedes" data-name="Mercedes AMG GT" data-price="115000" data-year="2026" data-hp="577" data-accel="3.2" data-keywords="mercedes amg gt مرسيدس فخامة جلد">
                     <img src="https://images.pexels.com/photos/16511358/pexels-photo-16511358.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Mercedes" class="w-full h-56 object-cover">
                     <div class="p-6 space-y-3">
                         <h3 class="text-xl font-bold text-amber-500">Mercedes AMG GT</h3>
@@ -117,7 +223,7 @@
                 </div>
 
                 <!-- Car Card 5 -->
-                <div class="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-2">
+                <div class="car-card bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-2" data-brand="audi" data-name="Audi R8 V10" data-price="160000" data-year="2025" data-hp="602" data-accel="3.1" data-keywords="audi r8 v10 أودي سباق تنفس طبيعي">
                     <img src="https://images.pexels.com/photos/6894432/pexels-photo-6894432.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Audi" class="w-full h-56 object-cover">
                     <div class="p-6 space-y-3">
                         <h3 class="text-xl font-bold text-amber-500">Audi R8 V10</h3>
@@ -130,7 +236,7 @@
                 </div>
 
                 <!-- Car Card 6 -->
-                <div class="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-2">
+                <div class="car-card bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl overflow-hidden shadow-2xl transition-transform hover:-translate-y-2" data-brand="volkswagen" data-name="Volkswagen Golf R" data-price="45000" data-year="2026" data-hp="315" data-accel="4.7" data-keywords="volkswagen golf r فولكس فاجن هاتشباك يومية عملية">
                     <img src="https://images.pexels.com/photos/14436192/pexels-photo-14436192.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Volkswagen" class="w-full h-56 object-cover">
                     <div class="p-6 space-y-3">
                         <h3 class="text-xl font-bold text-amber-500">Volkswagen Golf R</h3>
@@ -147,10 +253,73 @@
     </main>
 
     <!-- Floating AI Icon -->
-    <div class="fixed bottom-6 left-6 z-50 bg-amber-500 hover:bg-amber-600 text-slate-950 p-3.5 rounded-full shadow-2xl cursor-pointer transition-all animate-bounce flex items-center justify-center">
+    <div id="aiButton" class="fixed bottom-6 left-6 z-50 bg-amber-500 hover:bg-amber-600 text-slate-950 p-3.5 rounded-full shadow-2xl cursor-pointer transition-all flex items-center justify-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
         </svg>
+    </div>
+
+    <!-- AI Assistant Panel -->
+    <div id="aiPanel">
+        <!-- Panel Header -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-700/50 bg-slate-900/50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-500/50 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-amber-400">مساعد AutoElite الذكي</h3>
+                    <p class="text-xs text-slate-500">اسألني عن أي سيارة في المعرض</p>
+                </div>
+            </div>
+            <button id="aiClose" class="text-slate-500 hover:text-amber-500 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Messages Area -->
+        <div id="aiMessages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+            <!-- Initial greeting -->
+            <div class="ai-message flex gap-2">
+                <div class="shrink-0 w-7 h-7 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                </div>
+                <div class="bg-slate-800/60 rounded-2xl rounded-tr-sm px-4 py-3 max-w-[85%]">
+                    <p class="text-sm text-slate-200 leading-relaxed">أهلاً بك في معرض AutoElite! أنا مساعدك الذكي. أقدر أساعدك في:</p>
+                    <ul class="text-xs text-slate-400 mt-2 space-y-1 list-disc list-inside">
+                        <li>البحث عن سيارة بالاسم أو العلامة</li>
+                        <li>تصفية السيارات حسب السعر</li>
+                        <li>إيجاد أقوى أو أسرع سيارة</li>
+                        <li>التنقل بين صفحات الموقع</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Quick Suggestions -->
+            <div class="flex flex-wrap gap-2 pt-1">
+                <button class="ai-suggestion text-xs bg-slate-800/50 border border-slate-700 text-slate-300 rounded-full px-3 py-1.5 cursor-pointer" onclick="sendSuggestion('أرخص سيارة')">أرخص سيارة</button>
+                <button class="ai-suggestion text-xs bg-slate-800/50 border border-slate-700 text-slate-300 rounded-full px-3 py-1.5 cursor-pointer" onclick="sendSuggestion('أقوى سيارة')">أقوى سيارة</button>
+                <button class="ai-suggestion text-xs bg-slate-800/50 border border-slate-700 text-slate-300 rounded-full px-3 py-1.5 cursor-pointer" onclick="sendSuggestion('أسرع سيارة')">أسرع سيارة</button>
+                <button class="ai-suggestion text-xs bg-slate-800/50 border border-slate-700 text-slate-300 rounded-full px-3 py-1.5 cursor-pointer" onclick="sendSuggestion('سيارات BMW')">سيارات BMW</button>
+                <button class="ai-suggestion text-xs bg-slate-800/50 border border-slate-700 text-slate-300 rounded-full px-3 py-1.5 cursor-pointer" onclick="sendSuggestion('كل السيارات')">كل السيارات</button>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="px-4 py-3 border-t border-slate-700/50 bg-slate-900/50">
+            <div class="flex items-center gap-2">
+                <input id="aiInput" type="text" placeholder="اكتب سؤالك هنا..." class="flex-1 rounded-full px-4 py-2.5 text-sm">
+                <button id="aiSend" class="shrink-0 w-10 h-10 rounded-full bg-amber-500 hover:bg-amber-600 text-slate-950 flex items-center justify-center transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Footer Section -->
@@ -164,6 +333,317 @@
             </div>
         </div>
     </footer>
+
+    <script>
+    // ==================== SEARCH BAR ====================
+    const navSearch = document.getElementById('navSearch');
+    const carCards = document.querySelectorAll('.car-card');
+    const noResults = document.getElementById('noResults');
+    const carsGrid = document.getElementById('carsGrid');
+
+    navSearch.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        carCards.forEach(card => {
+            const name = card.dataset.name.toLowerCase();
+            const brand = card.dataset.brand.toLowerCase();
+            const keywords = card.dataset.keywords.toLowerCase();
+            const year = card.dataset.year;
+
+            const matches = !query ||
+                name.includes(query) ||
+                brand.includes(query) ||
+                keywords.includes(query) ||
+                year.includes(query);
+
+            if (matches) {
+                card.classList.remove('hidden-card');
+                visibleCount++;
+            } else {
+                card.classList.add('hidden-card');
+            }
+        });
+
+        if (visibleCount === 0 && query !== '') {
+            noResults.classList.add('visible');
+            carsGrid.style.display = 'none';
+        } else {
+            noResults.classList.remove('visible');
+            carsGrid.style.display = '';
+        }
+    });
+
+    function clearSearch() {
+        navSearch.value = '';
+        navSearch.dispatchEvent(new Event('input'));
+    }
+
+    // ==================== AI ASSISTANT ====================
+    const aiButton = document.getElementById('aiButton');
+    const aiPanel = document.getElementById('aiPanel');
+    const aiClose = document.getElementById('aiClose');
+    const aiInput = document.getElementById('aiInput');
+    const aiSend = document.getElementById('aiSend');
+    const aiMessages = document.getElementById('aiMessages');
+
+    // Car database for AI
+    const CAR_DB = [
+        { name: "BMW M4 Competition", brand: "BMW", price: 85000, year: 2026, hp: 503, accel: 3.8, desc: "سيارة رياضية خارقة بقوة 503 حصان، تسارع 0-100 في 3.8 ثانية" },
+        { name: "Dodge Charger Hellcat", brand: "Dodge", price: 78000, year: 2025, hp: 707, accel: 3.6, desc: "وحش العضلات الأمريكي بقوة 707 حصان" },
+        { name: "Porsche 911 Turbo S", brand: "Porsche", price: 230000, year: 2026, hp: 640, accel: 2.7, desc: "تحفة ألمانية بقوة 640 حصان، تسارع 0-100 في 2.7 ثانية" },
+        { name: "Mercedes AMG GT", brand: "Mercedes", price: 115000, year: 2026, hp: 577, accel: 3.2, desc: "فخامة وأداء بقوة 577 حصان، مقصورة جلد فاخر" },
+        { name: "Audi R8 V10", brand: "Audi", price: 160000, year: 2025, hp: 602, accel: 3.1, desc: "محرك V10 تنفس طبيعي بقوة 602 حصان" },
+        { name: "Volkswagen Golf R", brand: "Volkswagen", price: 45000, year: 2026, hp: 315, accel: 4.7, desc: "هاتشباك رياضية عملية بقوة 315 حصان" },
+    ];
+
+    // Brand page links
+    const BRAND_LINKS = {
+        'bmw': 'bmw.html',
+        'mercedes': '#',
+        'porsche': '#',
+        'audi': '#',
+        'volkswagen': '#',
+        'opel': '#',
+        'dodge': '#',
+    };
+
+    function openAI() {
+        aiPanel.classList.add('open');
+        aiButton.style.display = 'none';
+        setTimeout(() => aiInput.focus(), 400);
+    }
+
+    function closeAI() {
+        aiPanel.classList.remove('open');
+        aiButton.style.display = '';
+    }
+
+    aiButton.addEventListener('click', openAI);
+    aiClose.addEventListener('click', closeAI);
+
+    function addMessage(text, isUser = false) {
+        const msg = document.createElement('div');
+        msg.className = 'ai-message flex gap-2 ' + (isUser ? 'flex-row-reverse' : '');
+        msg.innerHTML = isUser
+            ? `<div class="bg-amber-500/20 border border-amber-500/40 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%]"><p class="text-sm text-slate-100 leading-relaxed">${text}</p></div>`
+            : `<div class="shrink-0 w-7 h-7 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg></div><div class="bg-slate-800/60 rounded-2xl rounded-tr-sm px-4 py-3 max-w-[85%]"><p class="text-sm text-slate-200 leading-relaxed">${text}</p></div>`;
+        aiMessages.appendChild(msg);
+        aiMessages.scrollTop = aiMessages.scrollHeight;
+    }
+
+    function addTyping() {
+        const t = document.createElement('div');
+        t.id = 'typingIndicator';
+        t.className = 'ai-message flex gap-2';
+        t.innerHTML = `<div class="shrink-0 w-7 h-7 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg></div><div class="bg-slate-800/60 rounded-2xl rounded-tr-sm px-4 py-3"><div class="ai-typing"><span></span><span></span><span></span></div></div>`;
+        aiMessages.appendChild(t);
+        aiMessages.scrollTop = aiMessages.scrollHeight;
+    }
+
+    function removeTyping() {
+        const t = document.getElementById('typingIndicator');
+        if (t) t.remove();
+    }
+
+    function filterCarsOnPage(predicate) {
+        let visibleCount = 0;
+        carCards.forEach((card, idx) => {
+            const car = CAR_DB[idx];
+            if (predicate(car)) {
+                card.classList.remove('hidden-card');
+                visibleCount++;
+            } else {
+                card.classList.add('hidden-card');
+            }
+        });
+        if (visibleCount === 0) {
+            noResults.classList.add('visible');
+            carsGrid.style.display = 'none';
+        } else {
+            noResults.classList.remove('visible');
+            carsGrid.style.display = '';
+        }
+        return visibleCount;
+    }
+
+    function showAllCars() {
+        carCards.forEach(c => c.classList.remove('hidden-card'));
+        noResults.classList.remove('visible');
+        carsGrid.style.display = '';
+    }
+
+    function formatPrice(p) {
+        return '$' + p.toLocaleString('en-US');
+    }
+
+    function processAI(input) {
+        const q = input.toLowerCase().trim();
+
+        // Greeting
+        if (/^(مرحبا|اهلا|أهلا|سلام|hi|hello|hey|ازيك|كيفك)/i.test(q)) {
+            return "أهلاً بك! أنا هنا لمساعدتك. تقدر تسألني عن أي سيارة في المعرض، أو تطلب تصفية حسب السعر أو القوة أو السرعة. إيش تحب تعرف؟";
+        }
+
+        // All cars
+        if (/(كل|جميع|all|show all|الكل|عرض كل|اظهر كل)/i.test(q) && /سيار|car/i.test(q)) {
+            showAllCars();
+            return `عرضت لك كل السيارات المتوفرة في المعرض (${CAR_DB.length} سيارات). تقدر تتصفحها الآن!";
+        }
+
+        // Cheapest car
+        if (/(ارخص|أرخص|cheap|cheapest|اقل سعر|أقل سعر|less expensive)/i.test(q)) {
+            const cheapest = CAR_DB.reduce((a, b) => a.price < b.price ? a : b);
+            showAllCars();
+            document.querySelector(`[data-name="${cheapest.name}"]`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return `أرخص سيارة في المعرض هي <strong class="text-amber-400">${cheapest.name}</strong> بسعر ${formatPrice(cheapest.price)}. ${cheapest.desc}.`;
+        }
+
+        // Most expensive
+        if (/(اغلى|أغلى|expensive|most expensive|اعلى سعر|أعلى سعر)/i.test(q)) {
+            const expensive = CAR_DB.reduce((a, b) => a.price > b.price ? a : b);
+            showAllCars();
+            document.querySelector(`[data-name="${expensive.name}"]`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return `أغلى سيارة في المعرض هي <strong class="text-amber-400">${expensive.name}</strong> بسعر ${formatPrice(expensive.price)}. ${expensive.desc}.`;
+        }
+
+        // Most powerful
+        if (/(اقوى|أقوى|strongest|most powerful|اكثر قوة|أكثر قوة|powerful|احصنة|خيل|hp|horses)/i.test(q)) {
+            const powerful = CAR_DB.reduce((a, b) => a.hp > b.hp ? a : b);
+            showAllCars();
+            document.querySelector(`[data-name="${powerful.name}"]`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return `أقوى سيارة في المعرض هي <strong class="text-amber-400">${powerful.name}</strong> بقوة ${powerful.hp} حصان. ${powerful.desc}.`;
+        }
+
+        // Fastest car
+        if (/(اسرع|أسرع|fastest|fast|سرعة|تسارع|0-100|acceleration)/i.test(q)) {
+            const fastest = CAR_DB.reduce((a, b) => a.accel < b.accel ? a : b);
+            showAllCars();
+            document.querySelector(`[data-name="${fastest.name}"]`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return `أسرع سيارة في المعرض هي <strong class="text-amber-400">${fastest.name}</strong> بتسارع 0-100 كم/س في ${fastest.accel} ثانية فقط! ${fastest.desc}.`;
+        }
+
+        // Price range filter
+        const priceMatch = q.match(/(\d{3,6})\s*(الف|ألف|k|thousand|دولار|\$)/i);
+        if (priceMatch) {
+            const maxPrice = parseInt(priceMatch[1]);
+            if (maxPrice < 1000) maxPrice *= 1000;
+            const count = filterCarsOnPage(c => c.price <= maxPrice);
+            const filtered = CAR_DB.filter(c => c.price <= maxPrice);
+            if (filtered.length > 0) {
+                let list = filtered.map(c => `• ${c.name} — ${formatPrice(c.price)}`).join('<br>');
+                return `وجدت ${count} سيارة بسعر أقل من ${formatPrice(maxPrice)}:<br><br>${list}`;
+            } else {
+                showAllCars();
+                return `مفيش سيارات بهذا السعر في المعرض. أرخص سيارة هي ${CAR_DB[5].name} بسعر ${formatPrice(CAR_DB[5].price)}.`;
+            }
+        }
+
+        // Filter by price under
+        if (/(تحت|اقل من|أقل من|under|below|cheaper)/i.test(q)) {
+            const numMatch = q.match(/(\d{3,6})/);
+            if (numMatch) {
+                const maxPrice = parseInt(numMatch[1]);
+                const count = filterCarsOnPage(c => c.price <= maxPrice);
+                const filtered = CAR_DB.filter(c => c.price <= maxPrice);
+                if (filtered.length > 0) {
+                    let list = filtered.map(c => `• ${c.name} — ${formatPrice(c.price)}`).join('<br>');
+                    return `سيارات بسعر تحت ${formatPrice(maxPrice)} (${count} سيارات):<br><br>${list}`;
+                }
+            }
+        }
+
+        // Brand filter
+        const brands = ['bmw', 'mercedes', 'porsche', 'audi', 'volkswagen', 'opel', 'dodge'];
+        for (const brand of brands) {
+            const brandAr = {
+                'bmw': 'بي ام دبليو|bmw|بي إم',
+                'mercedes': 'مرسيدس|mercedes|بنز|بنز',
+                'porsche': 'بورش|porsche|بورشه',
+                'audi': 'أودي|audi|اودي',
+                'volkswagen': 'فولكس|volkswagen|فولكس فاجن|vw',
+                'opel': 'أوبل|opel|اوبل',
+                'dodge': 'دودج|dodge|دوج',
+            };
+            const re = new RegExp(brandAr[brand], 'i');
+            if (re.test(q)) {
+                const filtered = CAR_DB.filter(c => c.brand.toLowerCase() === brand);
+                if (filtered.length > 0) {
+                    filterCarsOnPage(c => c.brand.toLowerCase() === brand);
+                    let list = filtered.map(c => `• ${c.name} — ${formatPrice(c.price)} — ${c.hp} حصان`).join('<br>');
+                    const link = BRAND_LINKS[brand];
+                    let navMsg = link !== '#' ? `<br><br><button onclick="window.location.href='${link}'" class="text-amber-400 underline text-xs">تصفح كل موديلات ${brand.toUpperCase()} ←</button>` : '';
+                    return `سيارات ${brand.toUpperCase()} في المعرض (${filtered.length} سيارات):<br><br>${list}${navMsg}`;
+                } else {
+                    return `مفيش سيارات ${brand.toUpperCase()} معروضة حالياً في الصفحة الرئيسية، بس تقدر تتصفح كل الموديلات من صفحة العلامة.`;
+                }
+            }
+        }
+
+        // Specific car name
+        for (const car of CAR_DB) {
+            if (q.includes(car.name.toLowerCase()) || q.includes(car.brand.toLowerCase())) {
+                showAllCars();
+                const card = document.querySelector(`[data-name="${car.name}"]`);
+                if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return `<strong class="text-amber-400">${car.name}</strong><br>العلامة: ${car.brand}<br>السعر: ${formatPrice(car.price)}<br>الموديل: ${car.year}<br>القوة: ${car.hp} حصان<br>تسارع 0-100: ${car.accel} ثانية<br><br>${car.desc}`;
+            }
+        }
+
+        // Year filter
+        const yearMatch = q.match(/(2025|2026|2024|2023)/);
+        if (yearMatch && /موديل|model|سنة|year/i.test(q)) {
+            const year = parseInt(yearMatch[1]);
+            const count = filterCarsOnPage(c => c.year === year);
+            const filtered = CAR_DB.filter(c => c.year === year);
+            if (filtered.length > 0) {
+                let list = filtered.map(c => `• ${c.name} — ${formatPrice(c.price)}`).join('<br>');
+                return `سيارات موديل ${year} (${count} سيارات):<br><br>${list}`;
+            }
+        }
+
+        // Compare
+        if (/(قارن|compare|مقارنة|افضل|أفضل|better|vs|بين)/i.test(q)) {
+            return "تقدر تطلب مني أقارن بين سيارتين! مثلاً قول: \"قارن بين BMW M4 و Audi R8\" وأنا أقولك الفرق في السعر والقوة والسرعة.";
+        }
+
+        // Help
+        if (/(مساعدة|help|ماذا|ايه|إيه|وش|كيف|how|what)/i.test(q)) {
+            return "أقدر أساعدك في:<br>• البحث عن سيارة بالاسم أو العلامة<br>• تصفية حسب السعر (مثلاً: \"سيارات تحت 100000\")<br>• إيجاد أرخص/أغلى/أقوى/أسرع سيارة<br>• التنقل لصفحة أي علامة<br>• معلومات تفصيلية عن أي سيارة<br><br>جرّب واحدة من الأزرار بالأعلى!";
+        }
+
+        // Default
+        return "مفهمتش طلبك تماماً، بس تقدر تجرب:<br>• \"أرخص سيارة\" أو \"أقوى سيارة\"<br>• \"سيارات BMW\" أو \"سيارات تحت 100000\"<br>• \"أسرع سيارة\" أو اسم أي سيارة<br>• أو اضغط على أحد الأزرار بالأعلى";
+    }
+
+    function sendAIMessage(text) {
+        addMessage(text, true);
+        addTyping();
+        setTimeout(() => {
+            removeTyping();
+            const response = processAI(text);
+            addMessage(response, false);
+        }, 600 + Math.random() * 400);
+    }
+
+    function sendSuggestion(text) {
+        sendAIMessage(text);
+    }
+
+    aiSend.addEventListener('click', () => {
+        const text = aiInput.value.trim();
+        if (!text) return;
+        sendAIMessage(text);
+        aiInput.value = '';
+    });
+
+    aiInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            aiSend.click();
+        }
+    });
+    </script>
 
 </body>
 </html>
